@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Reading Rules Verification — Levin, Discrete Mathematics</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;0,8..60,700;1,8..60,400&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:      #F7F4EE;
+    --paper-2:    #EFEBE1;
+    --ink:        #23201A;
+    --ink-soft:   #5B564C;
+    --rule:       #D8D2C3;
+    --rule-2:     #C7C0AE;
+    --ok:         #3E5C43;
+    --ok-bg:      #E7EEE3;
+    --ok-line:    #B9CBB4;
+    --bad:        #9A4B36;
+    --bad-bg:     #F3E5DD;
+    --bad-line:   #DDB6A2;
+    --mono:       'JetBrains Mono', ui-monospace, Consolas, monospace;
+    --serif:      'Source Serif 4', Georgia, 'Times New Roman', serif;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  *{ box-sizing: border-box; }
+  html{ scroll-padding-top: env(safe-area-inset-top, 0px); }
+  html, body{ height: 100%; }
+
+  body{
+    margin:0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--serif);
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* faint paper grain via layered radial lines */
+  body::before{
+    content:"";
+    position: fixed;
+    inset:0;
+    pointer-events:none;
+    background-image:
+      repeating-linear-gradient(180deg, rgba(35,32,26,0.018) 0px, rgba(35,32,26,0.018) 1px, transparent 1px, transparent 3px);
+    mix-blend-mode: multiply;
+    z-index: 0;
+  }
+
+  .wrap{
+    position: relative;
+    z-index: 1;
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 72px 28px 96px;
+  }
+
+  /* ---------- Header ---------- */
+  header{
+    margin-bottom: 56px;
+  }
+  .kicker{
+    font-family: var(--mono);
+    font-size: 12.5px;
+    letter-spacing: 0.02em;
+    color: var(--ink-soft);
+    margin: 0 0 18px;
+  }
+  .kicker span{ color: var(--rule-2); padding: 0 8px; }
+
+  h1{
+    font-size: 34px;
+    font-weight: 600;
+    line-height: 1.22;
+    margin: 0 0 14px;
+    letter-spacing: -0.01em;
+    max-width: 15ch;
+  }
+  .dek{
+    font-size: 17px;
+    color: var(--ink-soft);
+    max-width: 52ch;
+    margin: 0 0 28px;
+  }
+  .byline{
+    display:flex;
+    align-items: baseline;
+    gap: 10px;
+    padding-top: 22px;
+    border-top: 1px solid var(--rule);
+    font-size: 14.5px;
+    color: var(--ink-soft);
+  }
+  .byline b{
+    color: var(--ink);
+    font-weight: 600;
+  }
+  .byline .dot{ color: var(--rule-2); }
+
+  /* ---------- Scoreboard ---------- */
+  .scoreboard{
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin: 34px 0 0;
+  }
+  .chip{
+    font-family: var(--mono);
+    font-size: 13px;
+    padding: 7px 11px;
+    border-radius: 4px;
+    border: 1px solid var(--rule);
+    background: var(--paper-2);
+    color: var(--ink-soft);
+    white-space: nowrap;
+  }
+  .chip b{ color: var(--ink); font-weight: 600; }
+  .chip.ok{ border-color: var(--ok-line); background: var(--ok-bg); color: var(--ok); }
+  .chip.bad{ border-color: var(--bad-line); background: var(--bad-bg); color: var(--bad); }
+
+  /* ---------- Items ---------- */
+  .items{
+    margin-top: 60px;
+    display: flex;
+    flex-direction: column;
+  }
+  .item{
+    padding: 34px 0;
+    border-top: 1px solid var(--rule);
+  }
+  .item:last-child{ border-bottom: 1px solid var(--rule); }
+
+  .item-head{
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 18px;
+  }
+  .num{
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--ink-soft);
+    min-width: 22px;
+  }
+  .verdict{
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    padding: 3px 9px;
+    border-radius: 3px;
+    line-height: 1.6;
+  }
+  .verdict.C{ background: var(--ok-bg); color: var(--ok); border: 1px solid var(--ok-line); }
+  .verdict.F{ background: var(--bad-bg); color: var(--bad); border: 1px solid var(--bad-line); }
+
+  .rule-text{
+    font-size: 18px;
+    font-weight: 500;
+    line-height: 1.45;
+    margin: 0 0 16px;
+    max-width: 56ch;
+  }
+
+  blockquote{
+    margin: 0 0 16px;
+    padding: 2px 0 2px 18px;
+    border-left: 2px solid var(--rule-2);
+    font-size: 15.5px;
+    color: var(--ink-soft);
+    font-style: italic;
+    max-width: 56ch;
+  }
+  blockquote em.hl{
+    font-style: italic;
+    color: var(--ink);
+    background: linear-gradient(transparent 62%, var(--paper-2) 62%);
+    font-weight: 500;
+  }
+
+  .reason{
+    font-size: 15px;
+    max-width: 60ch;
+    margin: 0;
+  }
+  .reason b.tag{
+    font-family: var(--mono);
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--ink-soft);
+    letter-spacing: 0.02em;
+    margin-right: 8px;
+    vertical-align: 1px;
+  }
+
+  .correction{
+    margin-top: 12px;
+    padding: 10px 14px;
+    background: var(--paper-2);
+    border-radius: 4px;
+    font-size: 14.5px;
+    font-family: var(--mono);
+    color: var(--ink);
+    max-width: 60ch;
+    line-height: 1.6;
+  }
+  .correction b{
+    font-family: var(--serif);
+    font-style: italic;
+    font-weight: 600;
+    color: var(--bad);
+    margin-right: 6px;
+  }
+
+  /* ---------- Footer ---------- */
+  footer{
+    margin-top: 56px;
+    padding-top: 28px;
+    border-top: 1px solid var(--rule);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 28px;
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--ink-soft);
+  }
+  footer .fkey{ color: var(--ink); }
+
+  .colophon{
+    margin-top: 40px;
+    font-size: 13px;
+    color: var(--rule-2);
+    max-width: 60ch;
+  }
+
+  @media (max-width: 560px){
+    .wrap{ padding: 48px 20px 72px; }
+    h1{ font-size: 27px; }
+    .rule-text{ font-size: 16.5px; }
+  }
+
+  @media (prefers-reduced-motion: no-preference){
+    .item{ animation: none; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <p class="kicker">SCREENING&nbsp;TASK <span>·</span> LOGIC &amp; PROOF READING RULES</p>
+    <h1>Verification of reading rules against Levin's <em>Discrete&nbsp;Mathematics</em></h1>
+    <p class="dek">Eight rules, each checked word-for-word against its source quotation. Verdict, reasoning, and — where the rule fails — the shortest fix.</p>
+
+    <div class="byline">
+      <span>Prepared by</span><b>Afaq Ahmad</b><span class="dot">—</span><span>for client review</span>
+    </div>
+
+    <div class="scoreboard">
+      <span class="chip"><b>8</b>&nbsp;rules checked</span>
+      <span class="chip ok"><b>3</b>&nbsp;confirmed (C)</span>
+      <span class="chip bad"><b>5</b>&nbsp;flagged (F)</span>
+    </div>
+  </header>
+
+  <div class="items">
+
+    <!-- Item 1 -->
+    <section class="item">
+      <div class="item-head"><span class="num">01</span><span class="verdict F">F — flagged</span></div>
+      <p class="rule-text">In a proof by cases using Q and not‑Q, the two cases need not cover every possibility; each case only has to lead to P.</p>
+      <blockquote>"…prove that P is true by proving that Q ⇒ P and ¬Q ⇒ P for some statement Q. So <em class="hl">no matter what, whether or not Q is true</em>, we know that P is true."</blockquote>
+      <p class="reason"><b class="tag">WHY</b>Q and ¬Q are exhaustive by the law of excluded middle — that's precisely what lets the quote conclude "no matter what." The rule claims coverage is optional; the quote relies on it being total.</p>
+      <div class="correction"><b>Fix —</b>Q and ¬Q necessarily cover every possibility; what's flexible is only how each case reaches P.</div>
+    </section>
+
+    <!-- Item 2 -->
+    <section class="item">
+      <div class="item-head"><span class="num">02</span><span class="verdict F">F — flagged</span></div>
+      <p class="rule-text">'P is sufficient for Q' means that Q implies P.</p>
+      <blockquote>"P is sufficient for Q means <em class="hl">P ⇒ Q</em>."</blockquote>
+      <p class="reason"><b class="tag">WHY</b>The quote states the direction plainly: P ⇒ Q. The rule reverses it to Q ⇒ P.</p>
+      <div class="correction"><b>Fix —</b>'P is sufficient for Q' means P ⇒ Q, not Q ⇒ P.</div>
+    </section>
+
+    <!-- Item 3 -->
+    <section class="item">
+      <div class="item-head"><span class="num">03</span><span class="verdict C">C — confirmed</span></div>
+      <p class="rule-text">Proving the converse alone does not, in general, prove the original implication.</p>
+      <blockquote>"The converse is <em class="hl">NOT logically equivalent</em> to the original implication."</blockquote>
+      <p class="reason"><b class="tag">WHY</b>Non-equivalence of converse and original is exactly the textual support the rule needs.</p>
+    </section>
+
+    <!-- Item 4 -->
+    <section class="item">
+      <div class="item-head"><span class="num">04</span><span class="verdict F">F — flagged</span></div>
+      <p class="rule-text">A sentence with a free variable becomes a statement only when the variable is given a specific value; quantifying over it is not enough.</p>
+      <blockquote>"Or you could capture the free variable by <em class="hl">quantifying over it</em>, as in, for all values of x, 3+x = 12, which is false."</blockquote>
+      <p class="reason"><b class="tag">WHY</b>The quote uses quantification itself to produce a sentence with a definite truth value — the opposite of "not enough."</p>
+      <div class="correction"><b>Fix —</b>A free variable becomes a statement either by assigning it a specific value or by quantifying over it.</div>
+    </section>
+
+    <!-- Item 5 -->
+    <section class="item">
+      <div class="item-head"><span class="num">05</span><span class="verdict F">F — flagged</span></div>
+      <p class="rule-text">'P only if Q' means that Q implies P.</p>
+      <blockquote>"…is equivalent to saying if I sing, then I'm in the shower, so the only if part is <em class="hl">P ⇒ Q</em>."</blockquote>
+      <p class="reason"><b class="tag">WHY</b>The quote names the direction explicitly: P ⇒ Q, not Q ⇒ P.</p>
+      <div class="correction"><b>Fix —</b>'P only if Q' means P ⇒ Q.</div>
+    </section>
+
+    <!-- Item 6 -->
+    <section class="item">
+      <div class="item-head"><span class="num">06</span><span class="verdict C">C — confirmed</span></div>
+      <p class="rule-text">One counterexample is enough to show that a universal statement is false.</p>
+      <blockquote>"Since so many statements in mathematics are universal, making their negations existential, we can often prove that a statement is false … by <em class="hl">providing a counterexample</em>."</blockquote>
+      <p class="reason"><b class="tag">WHY</b>An existential negation is witnessed by a single instance — the quote's stated route to disproof.</p>
+    </section>
+
+    <!-- Item 7 -->
+    <section class="item">
+      <div class="item-head"><span class="num">07</span><span class="verdict F">F — flagged</span></div>
+      <p class="rule-text">An implication whose hypothesis is false is itself false.</p>
+      <blockquote>"…an implication is true either when <em class="hl">the hypothesis is false</em>, or when the conclusion is true."</blockquote>
+      <p class="reason"><b class="tag">WHY</b>A false hypothesis is listed as one of the two conditions that make the implication true — the reverse of the rule.</p>
+      <div class="correction"><b>Fix —</b>An implication with a false hypothesis is vacuously true, not false.</div>
+    </section>
+
+    <!-- Item 8 -->
+    <section class="item">
+      <div class="item-head"><span class="num">08</span><span class="verdict C">C — confirmed</span></div>
+      <p class="rule-text">In this definition, the contrapositive reverses the roles of P and Q and negates both.</p>
+      <blockquote>"The contrapositive of an implication P ⇒ Q is the statement <em class="hl">¬Q ⇒ ¬P</em>."</blockquote>
+      <p class="reason"><b class="tag">WHY</b>¬Q ⇒ ¬P swaps which letter leads and negates both — matching "reverses… and negates both" exactly.</p>
+    </section>
+
+  </div>
+
+  <footer>
+    <span><span class="fkey">Time spent:</span> ~12 minutes</span>
+    <span><span class="fkey">AI tool use:</span> none — judgement is my own</span>
+    <span><span class="fkey">Source:</span> Levin, <i>Discrete Mathematics: An Open Introduction</i>, 3rd ed., CC BY‑SA 4.0</span>
+  </footer>
+
+  <p class="colophon">Prepared for the client's reading-rules verification project. Available for further paid work of this kind.</p>
+
+</div>
+</body>
+</html>
